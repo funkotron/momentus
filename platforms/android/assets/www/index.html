@@ -18,115 +18,48 @@
     <!--<script type="text/javascript" src="js/aws.js"></script>-->
     <script type="text/javascript">
         function prn(tex) {
+            console.log(tex);
             var div = document.getElementById('maintex');
             div.innerHTML = div.innerHTML + "\n" + tex;
         }
 
         app.initialize();
-        var Clarifai = require('./clarifai_node.js');
-        Clarifai.initAPI("MNeAbUJ22LU7MIGbBBI7jzx497AAzo-XMCYIxpUH", "W03ol5uXKDIwSgzeTC6Y1IIuKuJfRgJxqbjuhVCV" );
-
-//        var rest, mime, client;
-//
-//        rest = require('rest'),
-//                mime = require('rest/interceptor/mime');
-//
-//        client = rest.wrap(mime);
-//        client({ path: '/data.json' }).then(function(response) {
-//            prn('response: ', response);
-//        });
-
-        function commonResultHandler( err, res ) {
-            if( err != null ) {
-                if( typeof err["status_code"] === "string" && err["status_code"] === "TIMEOUT") {
-                    prn("TAG request timed out");
-                }
-                else if( typeof err["status_code"] === "string" && err["status_code"] === "ALL_ERROR") {
-                    prn("TAG request received ALL_ERROR. Contact Clarifai support if it continues.");
-                }
-                else if( typeof err["status_code"] === "string" && err["status_code"] === "TOKEN_FAILURE") {
-                    prn("TAG request received TOKEN_FAILURE. Contact Clarifai support if it continues.");
-                }
-                else if( typeof err["status_code"] === "string" && err["status_code"] === "ERROR_THROTTLED") {
-                    prn("Clarifai host is throttling this application.");
-                }
-                else {
-                    prn("TAG request encountered an unexpected error: ");
-                    prn(err);
-                }
-            }
-            else {
-                if( opts["print-results"] ) {
-                    // if some images were successfully tagged and some encountered errors,
-                    // the status_code PARTIAL_ERROR is returned. In this case, we inspect the
-                    // status_code entry in each element of res["results"] to evaluate the individual
-                    // successes and errors. if res["status_code"] === "OK" then all images were
-                    // successfully tagged.
-                    if( typeof res["status_code"] === "string" &&
-                            ( res["status_code"] === "OK" || res["status_code"] === "PARTIAL_ERROR" )) {
-
-                        // the request completed successfully
-                        for( i = 0; i < res.results.length; i++ ) {
-                            if( res["results"][i]["status_code"] === "OK" ) {
-                                prn( 'docid='+res.results[i].docid +
-                                        ' local_id='+res.results[i].local_id +
-                                        ' tags='+res["results"][i].result["tag"]["classes"] )
-                            }
-                            else {
-                                prn( 'docid='+res.results[i].docid +
-                                        ' local_id='+res.results[i].local_id +
-                                        ' status_code='+res.results[i].status_code +
-                                        ' error = '+res.results[i]["result"]["error"] )
-                            }
-                        }
-
-                    }
-                }
-            }
-        }
-
-        function exampleTagSingleURL() {
-            var testImageURL = 'http://www.clarifai.com/img/metro-north.jpg';
-            var ourId = "train station 1"; // this is any string that identifies the image to your system
-
-            // Clarifai.setRequestTimeout( 100 ); // in ms - expect: force a timeout response
-            // Clarifai.setRequestTimeout( 100 ); // in ms - expect: ensure no timeout
-
-            Clarifai.tagURL( testImageURL , ourId, commonResultHandler );
-        }
 
         document.addEventListener("deviceready", onDeviceReady, false);
         function onDeviceReady() {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                WebView.setWebContentsDebuggingEnabled(true);
+            }
             prn("DEVICE READY");
+
 
         }
 
 
         // Called when capture operation is finished
-        //
         function captureSuccess(mediaFiles) {
-            prn("SUCCESS");
-            var i, len;
-            for (i = 0, len = mediaFiles.length; i < len; i += 1) {
-                //uploadFile(mediaFiles[i]);
-                getTags(i);
-            }
+            getTags(mediaFiles);
+//            prn("SUCCESS");
+//            var i, len;
+//            for (i = 0, len = mediaFiles.length; i < len; i += 1) {
+//                //uploadFile(mediaFiles[i]);
+//                getTags(i);
+//            }
         }
 
         // Called if something bad happens.
-        //
-        function captureError(error) {
+        function captureError(mediaFiles) {
             prn("ERROR!"+error.code);
             var msg = 'An error occurred during capture: ' + error.code;
             navigator.notification.alert(msg, null, 'Uh oh!');
         }
 
         // A button will call this function
-        //
         function captureImage() {
             // Launch device camera application,
             // allowing user to capture up to 2 images
-            navigator.device.capture.captureImage(captureSuccess, captureError, {limit: 1});
+            var capture = navigator.device.capture;
+            capture.captureImage(captureSuccess, captureError, {limit: 1});
 //            window.plugins.videocaptureplus.captureVideo(
 //                    captureSuccess,
 //                    captureError,
@@ -164,23 +97,32 @@
             options.fileName = fileURL.name;
             options.mimeType = "image/jpeg";
     
-            var params = {};
-            params.Authorization  = "Bearer 8Wm0brvXjPDWu2bXlB2lCqQQP2G7k0";
-
-            options.params = params;
+            var headers={"Authorization": "Bearer 8Wm0brvXjPDWu2bXlB2lCqQQP2G7k0"};
+            options.headers = headers;
+//            var params = {};
+//            options.params = params;
 
             prn("PREFILETRANSFER");
             var ft = new FileTransfer();
             prn("uploading="+fileURL);
+            window.fileURL = fileURL;
             response = ft.upload(fileURL.fullPath, encodeURI("https://api.clarifai.com/v1/tag/"), win, fail, options);
             prn("RESPONSE="+response);
         }
 
         // Get tags for image
         function getTags(mediaFile) {
-           prn("GETTAGS"+mediaFile);
+            prn("GETTAGS"+mediaFile.fullPath);
             uploadFile(mediaFile);
 //            aws_get_signed_request(mediaFile);
+        }
+
+        function mockPhoto(){
+            var mediaFile = {
+                name: "hello",
+                fullPath: "/Users/adam/Desktop/bben.jpg"
+            }
+            getTags(mediaFile);
         }
 
     </script>

@@ -18,6 +18,7 @@
     <!--<script type="text/javascript" src="js/aws.js"></script>-->
     <script type="text/javascript">
         function prn(tex) {
+            console.log(tex);
             var div = document.getElementById('maintex');
             div.innerHTML = div.innerHTML + "\n" + tex;
         }
@@ -26,19 +27,24 @@
 
         document.addEventListener("deviceready", onDeviceReady, false);
         function onDeviceReady() {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                WebView.setWebContentsDebuggingEnabled(true);
+            }
             prn("DEVICE READY");
+
 
         }
 
 
         // Called when capture operation is finished
         function captureSuccess(mediaFiles) {
-            prn("SUCCESS");
-            var i, len;
-            for (i = 0, len = mediaFiles.length; i < len; i += 1) {
-                //uploadFile(mediaFiles[i]);
-                getTags(i);
-            }
+            getTags(mediaFiles);
+//            prn("SUCCESS");
+//            var i, len;
+//            for (i = 0, len = mediaFiles.length; i < len; i += 1) {
+//                //uploadFile(mediaFiles[i]);
+//                getTags(i);
+//            }
         }
 
         // Called if something bad happens.
@@ -90,20 +96,22 @@
             options.fileName = fileURL.name;
             options.mimeType = "image/jpeg";
     
-            var params = {};
-            params.Authorization  = "Bearer 8Wm0brvXjPDWu2bXlB2lCqQQP2G7k0";
-            options.params = params;
+            var headers={"Authorization": "Bearer 8Wm0brvXjPDWu2bXlB2lCqQQP2G7k0"};
+            options.headers = headers;
+//            var params = {};
+//            options.params = params;
 
             prn("PREFILETRANSFER");
             var ft = new FileTransfer();
             prn("uploading="+fileURL);
+            window.fileURL = fileURL;
             response = ft.upload(fileURL.fullPath, encodeURI("https://api.clarifai.com/v1/tag/"), win, fail, options);
             prn("RESPONSE="+response);
         }
 
         // Get tags for image
         function getTags(mediaFile) {
-            prn("GETTAGS"+mediaFile);
+            prn("GETTAGS"+mediaFile.fullPath);
             uploadFile(mediaFile);
 //            aws_get_signed_request(mediaFile);
         }
@@ -171,6 +179,6 @@
         <div id="maintex" style="padding: 20px;">mohunt</div>
     </core-card>
 </core-scaffold>
-<paper-fab icon="explore" onclick="mockPhoto();"></paper-fab>
+<paper-fab icon="explore" onclick="captureImage();"></paper-fab>
 </body>
 </html>
