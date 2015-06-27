@@ -75,5 +75,14 @@
         },
         "is_top_level": true,
         "variables": {}
+    },
+    "com.synconset.imageResizer": {
+        "source": {
+            "type": "git",
+            "url": "https://github.com/CSullivan102/cordova-imageResizer.git",
+            "subdir": "."
+        },
+        "is_top_level": true,
+        "variables": {}
     }
 }

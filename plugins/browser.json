@@ -30,6 +30,9 @@
         },
         "cordova-plugin-media-capture": {
             "PACKAGE_NAME": "com.mohunt"
+        },
+        "com.synconset.imageResizer": {
+            "PACKAGE_NAME": "com.mohunt"
         }
     },
     "dependent_plugins": {}

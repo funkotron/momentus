@@ -248,6 +248,13 @@ module.exports = [
         "clobbers": [
             "navigator.device.capture"
         ]
+    },
+    {
+        "file": "plugins/com.synconset.imageResizer/www/imageresize.js",
+        "id": "com.synconset.imageResizer.ImageResizePlugin",
+        "clobbers": [
+            "plugins.imageResizer"
+        ]
     }
 ];
 module.exports.metadata = 
@@ -260,7 +267,8 @@ module.exports.metadata =
     "cordova-plugin-file": "2.1.1-dev",
     "cordova-plugin-media": "1.0.2-dev",
     "cordova-plugin-file-transfer": "1.2.1-dev",
-    "cordova-plugin-media-capture": "1.0.2-dev"
+    "cordova-plugin-media-capture": "1.0.2-dev",
+    "com.synconset.imageResizer": "0.1.1"
 }
 // BOTTOM OF METADATA
 });

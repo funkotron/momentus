@@ -39,6 +39,7 @@
         // Called when capture operation is finished
         function captureSuccess(mediaFiles) {
             getTags(mediaFiles);
+            // Display unlocked element
 //            prn("SUCCESS");
 //            var i, len;
 //            for (i = 0, len = mediaFiles.length; i < len; i += 1) {
@@ -97,11 +98,12 @@
             options.fileName = fileURL.name;
             options.mimeType = "image/jpeg";
     
-            var headers={"Authorization": "Bearer 8Wm0brvXjPDWu2bXlB2lCqQQP2G7k0"};
+            var headers={"Authorization": "Bearer 8Wm0brvXjPDWu2bXlB2lCqQQP2G7k0",
+            "Content-Length": fileURL.size};
             options.headers = headers;
 //            var params = {};
 //            options.params = params;
-
+            prn("SIZE "+fileURL.size);
             prn("PREFILETRANSFER");
             var ft = new FileTransfer();
             prn("uploading="+fileURL);
