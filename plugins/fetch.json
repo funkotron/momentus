@@ -34,32 +34,27 @@
     },
     "cordova-plugin-file": {
         "source": {
-            "type": "registry",
-            "id": "cordova-plugin-file"
-        },
-        "is_top_level": false,
-        "variables": {}
-    },
-    "org.apache.cordova.media-capture": {
-        "source": {
-            "type": "registry",
-            "id": "org.apache.cordova.media-capture"
+            "type": "git",
+            "url": "https://github.com/apache/cordova-plugin-file.git",
+            "subdir": "."
         },
         "is_top_level": true,
         "variables": {}
     },
-    "org.apache.cordova.file": {
-        "source": {
-            "type": "registry",
-            "id": "org.apache.cordova.file"
-        },
-        "is_top_level": false,
-        "variables": {}
-    },
     "cordova-plugin-file-transfer": {
         "source": {
-            "type": "registry",
-            "id": "cordova-plugin-file-transfer"
+            "type": "git",
+            "url": "https://github.com/apache/cordova-plugin-file-transfer",
+            "subdir": "."
+        },
+        "is_top_level": true,
+        "variables": {}
+    },
+    "cordova-plugin-media-capture": {
+        "source": {
+            "type": "git",
+            "url": "https://github.com/apache/cordova-plugin-media-capture",
+            "subdir": "."
         },
         "is_top_level": true,
         "variables": {}
