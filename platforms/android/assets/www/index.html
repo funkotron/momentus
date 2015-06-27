@@ -1,49 +1,243 @@
-<!DOCTYPE html>
-<!--
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing,
-    software distributed under the License is distributed on an
-    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-     KIND, either express or implied.  See the License for the
-    specific language governing permissions and limitations
-    under the License.
--->
+<!doctype html>
 <html>
-    <head>
-        <!--
-        Customize this policy to fit your own app's needs. For more guidance, see:
-            https://github.com/apache/cordova-plugin-whitelist/blob/master/README.md#content-security-policy
-        Some notes:
-            * gap: is required only on iOS (when using UIWebView) and is needed for JS->native communication
-            * https://ssl.gstatic.com is required only on Android and is needed for TalkBack to function properly
-            * Disables use of inline scripts in order to mitigate risk of XSS vulnerabilities. To change this:
-                * Enable inline JS: add 'unsafe-inline' to default-src
-        -->
-        <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *">
-        <meta name="format-detection" content="telephone=no">
-        <meta name="msapplication-tap-highlight" content="no">
-        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width">
-        <link rel="stylesheet" type="text/css" href="css/index.css">
-        <title>Hello World</title>
-    </head>
-    <body>
-        <div class="app">
-            <h1>Apache Cordova</h1>
+<head>
+    <title>Test Project</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <script src="bower_components/webcomponentsjs/webcomponents.js"></script>
+    <link rel="import" href="bower_components/core-scaffold/core-scaffold.html">
+    <link rel="import" href="bower_components/core-header-panel/core-header-panel.html">
+    <link rel="import" href="bower_components/core-menu/core-menu.html">
+    <link rel="import" href="bower_components/core-item/core-item.html">
+    <link rel="import" href="bower_components/paper-toast/paper-toast.html">
+    <link rel="import" href="bower_components/paper-fab/paper-fab.html">
+    <script type="text/javascript" src="cordova.js"></script>
+    <script type="text/javascript" charset="utf-8" src="json2.js"></script>
+    <script type="text/javascript" src="js/index.js"></script>
+    <!--<script type="text/javascript" src="js/aws.js"></script>-->
+    <script type="text/javascript">
+        function prn(tex) {
+            var div = document.getElementById('maintex');
+            div.innerHTML = div.innerHTML + "\n" + tex;
+        }
+
+        app.initialize();
+        var Clarifai = require('./clarifai_node.js');
+        Clarifai.initAPI("MNeAbUJ22LU7MIGbBBI7jzx497AAzo-XMCYIxpUH", "W03ol5uXKDIwSgzeTC6Y1IIuKuJfRgJxqbjuhVCV" );
+
+//        var rest, mime, client;
+//
+//        rest = require('rest'),
+//                mime = require('rest/interceptor/mime');
+//
+//        client = rest.wrap(mime);
+//        client({ path: '/data.json' }).then(function(response) {
+//            prn('response: ', response);
+//        });
+
+        function commonResultHandler( err, res ) {
+            if( err != null ) {
+                if( typeof err["status_code"] === "string" && err["status_code"] === "TIMEOUT") {
+                    prn("TAG request timed out");
+                }
+                else if( typeof err["status_code"] === "string" && err["status_code"] === "ALL_ERROR") {
+                    prn("TAG request received ALL_ERROR. Contact Clarifai support if it continues.");
+                }
+                else if( typeof err["status_code"] === "string" && err["status_code"] === "TOKEN_FAILURE") {
+                    prn("TAG request received TOKEN_FAILURE. Contact Clarifai support if it continues.");
+                }
+                else if( typeof err["status_code"] === "string" && err["status_code"] === "ERROR_THROTTLED") {
+                    prn("Clarifai host is throttling this application.");
+                }
+                else {
+                    prn("TAG request encountered an unexpected error: ");
+                    prn(err);
+                }
+            }
+            else {
+                if( opts["print-results"] ) {
+                    // if some images were successfully tagged and some encountered errors,
+                    // the status_code PARTIAL_ERROR is returned. In this case, we inspect the
+                    // status_code entry in each element of res["results"] to evaluate the individual
+                    // successes and errors. if res["status_code"] === "OK" then all images were
+                    // successfully tagged.
+                    if( typeof res["status_code"] === "string" &&
+                            ( res["status_code"] === "OK" || res["status_code"] === "PARTIAL_ERROR" )) {
+
+                        // the request completed successfully
+                        for( i = 0; i < res.results.length; i++ ) {
+                            if( res["results"][i]["status_code"] === "OK" ) {
+                                prn( 'docid='+res.results[i].docid +
+                                        ' local_id='+res.results[i].local_id +
+                                        ' tags='+res["results"][i].result["tag"]["classes"] )
+                            }
+                            else {
+                                prn( 'docid='+res.results[i].docid +
+                                        ' local_id='+res.results[i].local_id +
+                                        ' status_code='+res.results[i].status_code +
+                                        ' error = '+res.results[i]["result"]["error"] )
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+
+        function exampleTagSingleURL() {
+            var testImageURL = 'http://www.clarifai.com/img/metro-north.jpg';
+            var ourId = "train station 1"; // this is any string that identifies the image to your system
+
+            // Clarifai.setRequestTimeout( 100 ); // in ms - expect: force a timeout response
+            // Clarifai.setRequestTimeout( 100 ); // in ms - expect: ensure no timeout
+
+            Clarifai.tagURL( testImageURL , ourId, commonResultHandler );
+        }
+
+        document.addEventListener("deviceready", onDeviceReady, false);
+        function onDeviceReady() {
+            prn("DEVICE READY");
+
+        }
+
+
+        // Called when capture operation is finished
+        //
+        function captureSuccess(mediaFiles) {
+            prn("SUCCESS");
+            var i, len;
+            for (i = 0, len = mediaFiles.length; i < len; i += 1) {
+                //uploadFile(mediaFiles[i]);
+                getTags(i);
+            }
+        }
+
+        // Called if something bad happens.
+        //
+        function captureError(error) {
+            prn("ERROR!"+error.code);
+            var msg = 'An error occurred during capture: ' + error.code;
+            navigator.notification.alert(msg, null, 'Uh oh!');
+        }
+
+        // A button will call this function
+        //
+        function captureImage() {
+            // Launch device camera application,
+            // allowing user to capture up to 2 images
+            navigator.device.capture.captureImage(captureSuccess, captureError, {limit: 1});
+//            window.plugins.videocaptureplus.captureVideo(
+//                    captureSuccess,
+//                    captureError,
+//                    {
+//                        limit: 1
+//                        //duration: duration,
+//                        //highquality: highquality,
+//                        //frontcamera: frontcamera,
+//                        // you'll want to sniff the useragent/device and pass the best overlay based on that.. assuming iphone here
+//                        //portraitOverlay: 'www/img/cameraoverlays/overlay-iPhone-portrait.png',
+//                        //landscapeOverlay: 'www/img/cameraoverlays/overlay-iPhone-landscape.png'
+//                    }
+//            );
+        }
+
+
+        // Upload files to server
+        function uploadFile(fileURL) {
+            prn("UPLOADSTART");
+            var win = function (r) {
+                prn("Code = " + r.responseCode);
+                prn("Response = " + r.response);
+                prn("Sent = " + r.bytesSent);
+            }
+    
+            var fail = function (error) {
+                alert("An error has occurred: Code = " + error.code);
+                prn("upload error source " + error.source);
+                prn("upload error target " + error.target);
+            }
+
+            prn("PREFILEUPLOADOPTIONS");
+            var options = new FileUploadOptions();
+            options.fileKey = "file";
+            options.fileName = fileURL.name;
+            options.mimeType = "image/jpeg";
+    
+            var params = {};
+            params.Authorization  = "Bearer 8Wm0brvXjPDWu2bXlB2lCqQQP2G7k0";
+
+            options.params = params;
+
+            prn("PREFILETRANSFER");
+            var ft = new FileTransfer();
+            prn("uploading="+fileURL);
+            response = ft.upload(fileURL.fullPath, encodeURI("https://api.clarifai.com/v1/tag/"), win, fail, options);
+            prn("RESPONSE="+response);
+        }
+
+        // Get tags for image
+        function getTags(mediaFile) {
+           prn("GETTAGS"+mediaFile);
+            uploadFile(mediaFile);
+//            aws_get_signed_request(mediaFile);
+        }
+
+    </script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        body {
+            font-family: sans-serif;
+        }
+        core-scaffold {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+        }
+        #core_toolbar {
+            color: rgb(255, 255, 255);
+            background-color: rgb(79, 125, 201);
+        }
+        #core_card {
+            width: 96%;
+            height: 300px;
+            border-top-left-radius: 2px;
+            border-top-right-radius: 2px;
+            border-bottom-right-radius: 2px;
+            border-bottom-left-radius: 2px;
+            box-shadow: rgba(0, 0, 0, 0.0980392) 0px 2px 4px, rgba(0, 0, 0, 0.0980392) 0px 0px 3px;
+            margin: 2%;
+            background-color: rgb(255, 255, 255);
+            text-align: left;
+        }
+        paper-fab {
+            position: absolute;
+            right: 20px;
+            bottom: 20px;
+        }
+    </style>
+</head>
+<body unresolved>
+<core-scaffold>
+    <core-header-panel navigation flex mode="seamed">
+        <core-toolbar id="core_toolbar">Navigation</core-toolbar>
+        <core-menu theme="core-light-theme">
             <div id="deviceready" class="blink">
                 <p class="event listening">Connecting to Device</p>
                 <p class="event received">Device is Ready</p>
             </div>
-        </div>
-        <script type="text/javascript" src="cordova.js"></script>
-        <script type="text/javascript" src="js/index.js"></script>
-    </body>
+        </core-menu>
+    </core-header-panel>
+    <div tool>Test Project</div>
+    <core-card id="core_card" vertical layout start>
+        <div id="maintex" style="padding: 20px;">mohunt</div>
+    </core-card>
+</core-scaffold>
+<paper-fab icon="explore" onclick="captureImage();"></paper-fab>
+</body>
 </html>

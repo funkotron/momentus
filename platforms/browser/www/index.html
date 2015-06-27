@@ -13,29 +13,176 @@
     <link rel="import" href="bower_components/paper-toast/paper-toast.html">
     <link rel="import" href="bower_components/paper-fab/paper-fab.html">
     <script type="text/javascript" src="cordova.js"></script>
+    <script type="text/javascript" charset="utf-8" src="json2.js"></script>
     <script type="text/javascript" src="js/index.js"></script>
+    <!--<script type="text/javascript" src="js/aws.js"></script>-->
     <script type="text/javascript">
+        function prn(tex) {
+            var div = document.getElementById('maintex');
+            div.innerHTML = div.innerHTML + "\n" + tex;
+        }
+
         app.initialize();
+        var Clarifai = require('./clarifai_node.js');
+        Clarifai.initAPI("MNeAbUJ22LU7MIGbBBI7jzx497AAzo-XMCYIxpUH", "W03ol5uXKDIwSgzeTC6Y1IIuKuJfRgJxqbjuhVCV" );
+
+//        var rest, mime, client;
+//
+//        rest = require('rest'),
+//                mime = require('rest/interceptor/mime');
+//
+//        client = rest.wrap(mime);
+//        client({ path: '/data.json' }).then(function(response) {
+//            prn('response: ', response);
+//        });
+
+        function commonResultHandler( err, res ) {
+            if( err != null ) {
+                if( typeof err["status_code"] === "string" && err["status_code"] === "TIMEOUT") {
+                    prn("TAG request timed out");
+                }
+                else if( typeof err["status_code"] === "string" && err["status_code"] === "ALL_ERROR") {
+                    prn("TAG request received ALL_ERROR. Contact Clarifai support if it continues.");
+                }
+                else if( typeof err["status_code"] === "string" && err["status_code"] === "TOKEN_FAILURE") {
+                    prn("TAG request received TOKEN_FAILURE. Contact Clarifai support if it continues.");
+                }
+                else if( typeof err["status_code"] === "string" && err["status_code"] === "ERROR_THROTTLED") {
+                    prn("Clarifai host is throttling this application.");
+                }
+                else {
+                    prn("TAG request encountered an unexpected error: ");
+                    prn(err);
+                }
+            }
+            else {
+                if( opts["print-results"] ) {
+                    // if some images were successfully tagged and some encountered errors,
+                    // the status_code PARTIAL_ERROR is returned. In this case, we inspect the
+                    // status_code entry in each element of res["results"] to evaluate the individual
+                    // successes and errors. if res["status_code"] === "OK" then all images were
+                    // successfully tagged.
+                    if( typeof res["status_code"] === "string" &&
+                            ( res["status_code"] === "OK" || res["status_code"] === "PARTIAL_ERROR" )) {
+
+                        // the request completed successfully
+                        for( i = 0; i < res.results.length; i++ ) {
+                            if( res["results"][i]["status_code"] === "OK" ) {
+                                prn( 'docid='+res.results[i].docid +
+                                        ' local_id='+res.results[i].local_id +
+                                        ' tags='+res["results"][i].result["tag"]["classes"] )
+                            }
+                            else {
+                                prn( 'docid='+res.results[i].docid +
+                                        ' local_id='+res.results[i].local_id +
+                                        ' status_code='+res.results[i].status_code +
+                                        ' error = '+res.results[i]["result"]["error"] )
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+
+        function exampleTagSingleURL() {
+            var testImageURL = 'http://www.clarifai.com/img/metro-north.jpg';
+            var ourId = "train station 1"; // this is any string that identifies the image to your system
+
+            // Clarifai.setRequestTimeout( 100 ); // in ms - expect: force a timeout response
+            // Clarifai.setRequestTimeout( 100 ); // in ms - expect: ensure no timeout
+
+            Clarifai.tagURL( testImageURL , ourId, commonResultHandler );
+        }
+
         document.addEventListener("deviceready", onDeviceReady, false);
         function onDeviceReady() {
-            console.log("DEVICE READY")
-            var captureSuccess = function(mediaFiles) {
-                var i, path, len;
-                for (i = 0, len = mediaFiles.length; i < len; i += 1) {
-                    path = mediaFiles[i].fullPath;
-                    // do something interesting with the file
-                    console.log(path);
-                }
-            };
+            prn("DEVICE READY");
 
-            // capture error callback
-            var captureError = function(error) {
-                navigator.notification.alert('Error code: ' + error.code, null, 'Capture Error');
-            };
-
-            // start image capture
-            navigator.device.capture.captureImage(captureSuccess, captureError, {limit:2});
         }
+
+
+        // Called when capture operation is finished
+        //
+        function captureSuccess(mediaFiles) {
+            prn("SUCCESS");
+            var i, len;
+            for (i = 0, len = mediaFiles.length; i < len; i += 1) {
+                //uploadFile(mediaFiles[i]);
+                getTags(i);
+            }
+        }
+
+        // Called if something bad happens.
+        //
+        function captureError(error) {
+            prn("ERROR!"+error.code);
+            var msg = 'An error occurred during capture: ' + error.code;
+            navigator.notification.alert(msg, null, 'Uh oh!');
+        }
+
+        // A button will call this function
+        //
+        function captureImage() {
+            // Launch device camera application,
+            // allowing user to capture up to 2 images
+            navigator.device.capture.captureImage(captureSuccess, captureError, {limit: 1});
+//            window.plugins.videocaptureplus.captureVideo(
+//                    captureSuccess,
+//                    captureError,
+//                    {
+//                        limit: 1
+//                        //duration: duration,
+//                        //highquality: highquality,
+//                        //frontcamera: frontcamera,
+//                        // you'll want to sniff the useragent/device and pass the best overlay based on that.. assuming iphone here
+//                        //portraitOverlay: 'www/img/cameraoverlays/overlay-iPhone-portrait.png',
+//                        //landscapeOverlay: 'www/img/cameraoverlays/overlay-iPhone-landscape.png'
+//                    }
+//            );
+        }
+
+
+        // Upload files to server
+        function uploadFile(fileURL) {
+            prn("UPLOADSTART");
+            var win = function (r) {
+                prn("Code = " + r.responseCode);
+                prn("Response = " + r.response);
+                prn("Sent = " + r.bytesSent);
+            }
+    
+            var fail = function (error) {
+                alert("An error has occurred: Code = " + error.code);
+                prn("upload error source " + error.source);
+                prn("upload error target " + error.target);
+            }
+
+            prn("PREFILEUPLOADOPTIONS");
+            var options = new FileUploadOptions();
+            options.fileKey = "file";
+            options.fileName = fileURL.name;
+            options.mimeType = "image/jpeg";
+    
+            var params = {};
+            params.Authorization  = "Bearer 8Wm0brvXjPDWu2bXlB2lCqQQP2G7k0";
+
+            options.params = params;
+
+            prn("PREFILETRANSFER");
+            var ft = new FileTransfer();
+            prn("uploading="+fileURL);
+            response = ft.upload(fileURL.fullPath, encodeURI("https://api.clarifai.com/v1/tag/"), win, fail, options);
+            prn("RESPONSE="+response);
+        }
+
+        // Get tags for image
+        function getTags(mediaFile) {
+           prn("GETTAGS"+mediaFile);
+            uploadFile(mediaFile);
+//            aws_get_signed_request(mediaFile);
+        }
+
     </script>
     <style>
         html, body {
@@ -80,8 +227,6 @@
     <core-header-panel navigation flex mode="seamed">
         <core-toolbar id="core_toolbar">Navigation</core-toolbar>
         <core-menu theme="core-light-theme">
-            <core-item icon="settings" label="item1"></core-item>
-            <core-item icon="settings" label="item2"></core-item>
             <div id="deviceready" class="blink">
                 <p class="event listening">Connecting to Device</p>
                 <p class="event received">Device is Ready</p>
@@ -90,10 +235,9 @@
     </core-header-panel>
     <div tool>Test Project</div>
     <core-card id="core_card" vertical layout start>
-        <div style="padding: 20px;">This is a sample project.  Please share my blog if you've found this useful</div>
+        <div id="maintex" style="padding: 20px;">mohunt</div>
     </core-card>
-    <paper-toast id="toast1" text="Created by Nic Raboy"></paper-toast>
 </core-scaffold>
-<paper-fab icon="add" onclick="document.querySelector('#toast1').show()"></paper-fab>
+<paper-fab icon="explore" onclick="captureImage();"></paper-fab>
 </body>
 </html>
