@@ -19,13 +19,18 @@
         "org.transistorsoft.cordova.background-geolocation": {
             "PACKAGE_NAME": "com.mohunt"
         },
+        "cordova-plugin-file": {
+            "PACKAGE_NAME": "com.mohunt"
+        },
+        "cordova-plugin-media": {
+            "PACKAGE_NAME": "com.mohunt"
+        },
         "cordova-plugin-file-transfer": {
+            "PACKAGE_NAME": "com.mohunt"
+        },
+        "cordova-plugin-media-capture": {
             "PACKAGE_NAME": "com.mohunt"
         }
     },
-    "dependent_plugins": {
-        "cordova-plugin-file": {
-            "PACKAGE_NAME": "com.mohunt"
-        }
-    }
+    "dependent_plugins": {}
 }

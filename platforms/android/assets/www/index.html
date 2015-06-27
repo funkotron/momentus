@@ -58,8 +58,7 @@
         function captureImage() {
             // Launch device camera application,
             // allowing user to capture up to 2 images
-            var capture = navigator.device.capture;
-            capture.captureImage(captureSuccess, captureError, {limit: 1});
+            navigator.device.capture.captureImage(captureSuccess, captureError, {limit: 1});
 //            window.plugins.videocaptureplus.captureVideo(
 //                    captureSuccess,
 //                    captureError,
@@ -78,6 +77,7 @@
 
         // Upload files to server
         function uploadFile(fileURL) {
+            fileURL = fileURL[0];
             prn("UPLOADSTART");
             var win = function (r) {
                 prn("Code = " + r.responseCode);
@@ -112,7 +112,7 @@
 
         // Get tags for image
         function getTags(mediaFile) {
-            prn("GETTAGS"+mediaFile.fullPath);
+            prn("GETTAGS"+ mediaFile);
             uploadFile(mediaFile);
 //            aws_get_signed_request(mediaFile);
         }
